@@ -2,9 +2,7 @@ import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import DataGrid, { Editing } from 'devextreme-react/data-grid';
 import 'devextreme/dist/css/dx.common.css';
-import 'devextreme/dist/css/dx.light.css'; 3
-
-
+import 'devextreme/dist/css/dx.light.css';
 
 const App = () => {
   const gridParams = {
