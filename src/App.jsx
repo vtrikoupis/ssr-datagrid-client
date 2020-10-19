@@ -56,7 +56,7 @@ const App = () => {
   }
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/v1/users/no-role")
+    fetch(process.env.API_URL + `users/no-role`)
       .then(res => res.json())
       .then(
         (result) => {
