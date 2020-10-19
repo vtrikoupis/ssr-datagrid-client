@@ -4,7 +4,7 @@ const Dotenv = require('dotenv-webpack');
 
 module.exports = {
   output: {
-    publicPath: process.env.DEPLOYMENT_URL,
+    publicPath: "http://localhost:8080/",
   },
 
   resolve: {
@@ -12,7 +12,7 @@ module.exports = {
   },
 
   devServer: {
-    port: 8080,
+    port: 3000,
   },
 
   module: {
