@@ -2,11 +2,14 @@ import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import DataGrid, { Editing } from 'devextreme-react/data-grid';
 import 'devextreme/dist/css/dx.common.css';
-import 'devextreme/dist/css/dx.light.css';
+import 'devextreme/dist/css/dx.light.css'; 3
 
 
 
 const App = () => {
+  const gridParams = {
+    showBorders: true
+  }
   const [data, setData] = useState([])
   const [error, setError] = useState(null);
   const [event, setEvent] = useState(null)
@@ -53,7 +56,7 @@ const App = () => {
   }
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/v1/users")
+    fetch("http://localhost:5000/api/v1/users/no-role")
       .then(res => res.json())
       .then(
         (result) => {
@@ -73,12 +76,14 @@ const App = () => {
     return (
       <div>
         <DataGrid
+          {...gridParams}
           dataSource={data}
-          showBorders={true}
           onEditingStart={(e) => startingToEdit(e)}
           onRowUpdated={(e) => rowUpdated(e)}
-          // this next line only works with static data? why not with dynamic?
-          defaultColumns={columns}
+          allowColumnReordering={true}
+          allowColumnResizing={true}
+        // this next line only works with static data? why not with dynamic?
+        // defaultColumns={columns}
         >
           <Editing
             mode="cell"
