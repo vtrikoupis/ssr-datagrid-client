@@ -52,7 +52,6 @@ const App = () => {
         in the first option, should there be a debounce maybe so that we can poll multiple writes, for example every 10 seconds?
         if()
     */
-
   }
 
   useEffect(() => {
