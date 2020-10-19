@@ -5,7 +5,7 @@ const Dotenv = require('dotenv-webpack');
 module.exports = {
   output: {
     publicPath: process.env.NODE_ENV === 'production'
-    ? '/dist/'
+    ? '/'
     : `http://localhost:${process.env.REACT_APP_HOST_PORT}/`,
   },
 
