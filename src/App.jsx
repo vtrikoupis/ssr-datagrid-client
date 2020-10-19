@@ -14,8 +14,6 @@ const App = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [initVal, setInitVal] = useState(null)
   const [intendedCellToEdit, setIntendedCellToEdit] = useState(null)
-  const columns = ['Uid', 'Name', 'Email', 'Modules', 'Details'];
-
 
   // 1st state update: cell focused
   useEffect(() => {
