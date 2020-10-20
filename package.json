@@ -19,6 +19,7 @@
     "babel-loader": "8.1.0",
     "css-loader": "^3.5.3",
     "devextreme": "^20.1.7",
+    "dotenv-flow-webpack": "^1.1.0",
     "dotenv-webpack": "^4.0.0",
     "html-webpack-plugin": "git://github.com/ScriptedAlchemy/html-webpack-plugin#master",
     "readable-stream": "^3.6.0",
