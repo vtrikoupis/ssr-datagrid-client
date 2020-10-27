@@ -49,7 +49,6 @@ const App = () => {
     }
   }, [intendedCellToEdit])
 
-  // useEffect to update Grid from db options
 
   const customizeColumns = (columns) => {
     columns.forEach((column, index) => {

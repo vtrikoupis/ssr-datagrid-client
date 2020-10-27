@@ -1,6 +1,4 @@
 import { createStore, action, thunk } from 'easy-peasy';
-import { padEnd } from 'lodash';
-
 
 const columnModel = {
   initialColumns: null,

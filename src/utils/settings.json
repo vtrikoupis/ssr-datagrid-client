@@ -1,5 +1,5 @@
 {
-  "order": [
+  "columnOptions": [
     {
       "visibleIndex": 1,
       "dataField": "_id",
