@@ -1,0 +1,40 @@
+{
+  "order": [
+    {
+      "visibleIndex": 1,
+      "dataField": "_id",
+      "dataType": "string",
+      "visible": true
+    },
+    {
+      "visibleIndex": 0,
+      "dataField": "uid",
+      "dataType": "string",
+      "visible": true
+    },
+    {
+      "visibleIndex": 2,
+      "dataField": "name",
+      "dataType": "string",
+      "visible": true
+    },
+    {
+      "visibleIndex": 3,
+      "dataField": "email",
+      "dataType": "string",
+      "visible": true
+    },
+    {
+      "visibleIndex": 4,
+      "dataField": "modules",
+      "dataType": "string",
+      "visible": true
+    },
+    {
+      "visibleIndex": 5,
+      "dataField": "details",
+      "dataType": "string",
+      "visible": true
+    }
+  ]
+}

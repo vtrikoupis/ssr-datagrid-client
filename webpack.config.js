@@ -1,9 +1,8 @@
 const HtmlWebPackPlugin = require("html-webpack-plugin");
 const ModuleFederationPlugin = require("webpack/lib/container/ModuleFederationPlugin");
-const Dotenv = require('dotenv-webpack');
+// const Dotenv = require('dotenv-webpack');
+const DotenvFlow = require('dotenv-flow-webpack');
 
-console.log(process.env)
-console.log('shit')
 module.exports = {
   output: {
     publicPath: '/',
@@ -50,6 +49,7 @@ module.exports = {
     new HtmlWebPackPlugin({
       template: "./src/index.html",
     }),
-    new Dotenv()
+    // new Dotenv(),
+    new DotenvFlow()
   ],
 };
