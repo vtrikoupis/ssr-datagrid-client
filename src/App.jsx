@@ -16,8 +16,7 @@ const App = () => {
     showBorders: true
   }
   const gridRef = useRef(null)
-  // const [initialColumnState, setInitialColumnState] = useState(null)
-  // const [data, setData] = useState([])
+
   const [columnNames, setColumnNames] = useState(null)
   const [error, setError] = useState(null);
   const [event, setEvent] = useState(null)
@@ -79,9 +78,7 @@ const App = () => {
           "icon": "hide",
           "onItemClick": (e) => hideColumn(e, ctx)
         })
-
     }
-
   }
 
 
