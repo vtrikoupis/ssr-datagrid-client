@@ -3,11 +3,13 @@ import ReactDOM from "react-dom";
 import DataGrid, { Button, Column, ColumnChooser, Editing } from 'devextreme-react/data-grid';
 import 'devextreme/dist/css/dx.common.css';
 import 'devextreme/dist/css/dx.light.css';
+import './styles/icons.css'
 import _ from "lodash"
 import { StoreProvider, useStoreActions, useStoreState } from "easy-peasy";
 import store from './utils/store'
 import { ModalProvider } from "styled-react-modal";
 import { StyledModal } from "./components/Modal"
+import { Hide } from "devextreme-react/tree-list";
 
 const App = () => {
   const gridParams = {
@@ -58,6 +60,28 @@ const App = () => {
         column.visible = false
       }
     })
+  }
+
+  // pass the event and the context
+  function hideColumn(e, ctx) {
+    // could use the itemIndex but as we add more items this might change whereas the icon id will be set to hide
+    if (ctx.column && e.itemData.icon === "hide") {
+      gridRef.current.instance.columnOption(ctx.column.visibleIndex, 'visible', false)
+    }
+  }
+
+  const prepareContextMenu = (ctx) => {
+    if (ctx.target == "header") {
+      ctx.items.push(
+        {
+          "text": "Hide Column",
+          "disabled": false,
+          "icon": "hide",
+          "onItemClick": (e) => hideColumn(e, ctx)
+        })
+
+    }
+
   }
 
 
@@ -135,6 +159,7 @@ const App = () => {
         Loading...
       </StyledModal> */}
       <DataGrid
+
         {...gridParams}
         dataSource={data}
         customizeColumns={e => customizeColumns(e)}
@@ -145,6 +170,7 @@ const App = () => {
         columnHidingEnabled={true}
         onInitialized={onInitialized}
         onCellClick={cellClicked}
+        onContextMenuPreparing={prepareContextMenu}
         ref={gridRef}
 
 
