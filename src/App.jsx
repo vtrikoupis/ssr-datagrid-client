@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
-import DataGrid, { Button, Column, ColumnChooser, Editing } from 'devextreme-react/data-grid';
+import DataGrid, { Button, Column, ColumnChooser, Editing, GroupPanel, Grouping } from 'devextreme-react/data-grid';
 import 'devextreme/dist/css/dx.common.css';
 import 'devextreme/dist/css/dx.light.css';
 import './styles/icons.css'
@@ -25,6 +25,7 @@ const App = () => {
   const [initVal, setInitVal] = useState(null)
   const [intendedCellToEdit, setIntendedCellToEdit] = useState(null)
   const [completed, setCompleted] = useState(false)
+  const [lastColumnHidden, setLastColumnHidden] = useState(null)
 
   const setInitialColumns = useStoreActions(actions => actions.columns.setInitialColumns)
   const initialColumns = useStoreState(state => state.columns.initialColumns)
@@ -58,16 +59,11 @@ const App = () => {
       } else {
         column.visible = false
       }
+      console.log(gridRef.current.instance)
     })
   }
 
-  // pass the event and the context
-  function hideColumn(e, ctx) {
-    // could use the itemIndex but as we add more items this might change whereas the icon id will be set to hide
-    if (ctx.column && e.itemData.icon === "hide") {
-      gridRef.current.instance.columnOption(ctx.column.visibleIndex, 'visible', false)
-    }
-  }
+
 
   const prepareContextMenu = (ctx) => {
     if (ctx.target == "header") {
@@ -77,10 +73,55 @@ const App = () => {
           "disabled": false,
           "icon": "hide",
           "onItemClick": (e) => hideColumn(e, ctx)
-        })
+        },
+        {
+          "text": "Unhide last Column",
+          "disabled": false,
+          "icon": "unhide",
+          "onItemClick": (e) => unhideColumn(e, ctx)
+        },
+        {
+          "text": "Best Fit Column",
+          "disabled": false,
+          "icon": "resize",
+          "onItemClick": (e) => bestFitColumn(e, ctx)
+        },
+      )
     }
   }
 
+    // pass the event and the context
+    function hideColumn(e, ctx) {
+      // could use the itemIndex but as we add more items this might change whereas the icon id will be set to hide
+      if (ctx.column && e.itemData.icon === "hide") {
+        gridRef.current.instance.columnOption(ctx.column.visibleIndex, 'visible', false)
+        setLastColumnHidden(ctx.column.visibleIndex)
+      }
+    }
+
+    function unhideColumn(e, ctx) {
+      // could use the itemIndex but as we add more items this might change whereas the icon id will be set to hide
+      if (ctx.column && e.itemData.icon === "unhide") {
+        if(lastColumnHidden){
+          gridRef.current.instance.columnOption(lastColumnHidden, 'visible', true)
+        }
+      }
+    }
+
+    // auto not an option on devextreme? Have to repaint the grid?
+    function bestFitColumn(e, ctx) {
+      if(ctx.column && e.itemData.icon === "resize"){
+        console.log('click through')
+        console.log(gridRef.current.instance)
+        gridRef.current.instance.columnOption(ctx.column.dataField, 'width', 'auto')
+      }
+    }
+
+
+    // same as comment above
+    function bestFitAllColumns(e, ctx) {
+      // if(ctx.column && e.itemData.ixon === "fit-all")
+    }
 
   // final useEffect to hide Modal if something can't be done synchronously..
   useEffect(() => {
@@ -169,14 +210,10 @@ const App = () => {
         onCellClick={cellClicked}
         onContextMenuPreparing={prepareContextMenu}
         ref={gridRef}
-
-
-      // this next line only works with static data? why not with dynamic?
-      // defaultColumns={columns}
       >
-        {/* <ColumnChooser enabled={true} /> */}
-
-        {/* <Columns columns={columnNames} /> */}
+        <Grouping contextMenuEnabled={true} />
+        <GroupPanel visible={true} /> {/* or "auto" */}
+        <ColumnChooser enabled={true} />
 
         <Editing
           mode="cell"
