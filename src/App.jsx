@@ -26,6 +26,7 @@ const App = () => {
   const [intendedCellToEdit, setIntendedCellToEdit] = useState(null)
   const [completed, setCompleted] = useState(false)
   const [lastColumnHidden, setLastColumnHidden] = useState(null)
+  const [groupPanelVisible, setGroupPanelVisible] = useState(true)
 
   const setInitialColumns = useStoreActions(actions => actions.columns.setInitialColumns)
   const initialColumns = useStoreState(state => state.columns.initialColumns)
@@ -59,8 +60,16 @@ const App = () => {
       } else {
         column.visible = false
       }
-      console.log(gridRef.current.instance)
+
+      if (settings[0].order[index].groupIndex) {
+        // console.log("Column at index " + index + " (field = " + column.dataField + ") should have a groupIndex of " + settings[0].order[index].groupIndex)
+        column.groupIndex = settings[0].order[index].groupIndex
+      }
+
+
     })
+    console.log("logging instance")
+    console.log(gridRef.current.instance)
   }
 
 
@@ -73,6 +82,12 @@ const App = () => {
           "disabled": false,
           "icon": "hide",
           "onItemClick": (e) => hideColumn(e, ctx)
+        },
+        {
+          "text": groupPanelVisible ? "Hide GroupPanel" : "Show GroupPanel",
+          "icon": "groupPanel",
+          "disabled": false,
+          "onItemClick": (e) => toggleGroupPanelVisibility(e, ctx)
         },
         {
           "text": "Unhide last Column",
@@ -90,38 +105,50 @@ const App = () => {
     }
   }
 
-    // pass the event and the context
-    function hideColumn(e, ctx) {
-      // could use the itemIndex but as we add more items this might change whereas the icon id will be set to hide
-      if (ctx.column && e.itemData.icon === "hide") {
-        gridRef.current.instance.columnOption(ctx.column.visibleIndex, 'visible', false)
-        setLastColumnHidden(ctx.column.visibleIndex)
+  // pass the event and the context
+  function hideColumn(e, ctx) {
+    // could use the itemIndex but as we add more items this might change whereas the icon id will be set to hide
+    if (ctx.column && e.itemData.icon === "hide") {
+      gridRef.current.instance.columnOption(ctx.column.visibleIndex, 'visible', false)
+      setLastColumnHidden(ctx.column.visibleIndex)
+    }
+  }
+
+  function unhideColumn(e, ctx) {
+    // could use the itemIndex but as we add more items this might change whereas the icon id will be set to hide
+    if (ctx.column && e.itemData.icon === "unhide") {
+      if (lastColumnHidden) {
+        gridRef.current.instance.columnOption(lastColumnHidden, 'visible', true)
+      }
+    }
+  }
+
+  // auto not an option on devextreme? Have to repaint the grid?
+  function bestFitColumn(e, ctx) {
+    if (ctx.column && e.itemData.icon === "resize") {
+      console.log('click through')
+      console.log(gridRef.current.instance)
+      console.log(ctx.column.dataField)
+      gridRef.current.instance.columnOption(ctx.column.dataField, 'width', 'auto')
+    }
+  }
+
+  function toggleGroupPanelVisibility(e, ctx) {
+    if (e.itemData.icon === "groupPanel") {
+      if (groupPanelVisible) {
+        setGroupPanelVisible(false)
+      } else {
+        setGroupPanelVisible(true)
       }
     }
 
-    function unhideColumn(e, ctx) {
-      // could use the itemIndex but as we add more items this might change whereas the icon id will be set to hide
-      if (ctx.column && e.itemData.icon === "unhide") {
-        if(lastColumnHidden){
-          gridRef.current.instance.columnOption(lastColumnHidden, 'visible', true)
-        }
-      }
-    }
-
-    // auto not an option on devextreme? Have to repaint the grid?
-    function bestFitColumn(e, ctx) {
-      if(ctx.column && e.itemData.icon === "resize"){
-        console.log('click through')
-        console.log(gridRef.current.instance)
-        gridRef.current.instance.columnOption(ctx.column.dataField, 'width', 'auto')
-      }
-    }
+  }
 
 
-    // same as comment above
-    function bestFitAllColumns(e, ctx) {
-      // if(ctx.column && e.itemData.ixon === "fit-all")
-    }
+  // same as comment above
+  function bestFitAllColumns(e, ctx) {
+    // if(ctx.column && e.itemData.ixon === "fit-all")
+  }
 
   // final useEffect to hide Modal if something can't be done synchronously..
   useEffect(() => {
@@ -152,6 +179,7 @@ const App = () => {
   }
 
   const onColumnsChanging = _.debounce((args) => {
+    console.log(gridRef.current.instance)
     if (initialColumns === null) {
       // setInitialColumns(args.component._controllers.stateStoring._state.columns)
       // console.log(args.component._controllers.stateStoring._state.columns)
@@ -212,7 +240,7 @@ const App = () => {
         ref={gridRef}
       >
         <Grouping contextMenuEnabled={true} />
-        <GroupPanel visible={true} /> {/* or "auto" */}
+        <GroupPanel visible={groupPanelVisible} /> {/* or "auto" */}
         <ColumnChooser enabled={true} />
 
         <Editing
