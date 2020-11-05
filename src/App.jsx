@@ -21,11 +21,8 @@ const App = () => {
   }
   const gridRef = useRef(null)
 
-  const [columnNames, setColumnNames] = useState(null)
   const [error, setError] = useState(null);
   const [event, setEvent] = useState(null)
-  const [modalOpen, setModalOpen] = useState(true);
-  const [isLoading, setIsLoading] = useState(true)
   const [initVal, setInitVal] = useState(null)
   const [intendedCellToEdit, setIntendedCellToEdit] = useState(null)
   const [completed, setCompleted] = useState(false)
@@ -111,12 +108,12 @@ const App = () => {
           "icon": "unhide",
           "onItemClick": (e) => unhideColumn(e, ctx)
         },
-        {
-          "text": "Best Fit Column",
-          "disabled": false,
-          "icon": "resize",
-          "onItemClick": (e) => bestFitColumn(e, ctx)
-        },
+        // {
+        //   "text": "Best Fit Column",
+        //   "disabled": false,
+        //   "icon": "resize",
+        //   "onItemClick": (e) => bestFitColumn(e, ctx)
+        // },
       )
     }
   }
@@ -197,12 +194,12 @@ const App = () => {
 
   const onColumnsChanging = _.debounce((args) => {
     console.log(gridRef.current.instance)
-    if (initialColumns === null) {
-      // setInitialColumns(args.component._controllers.stateStoring._state.columns)
-      // console.log(args.component._controllers.stateStoring._state.columns)
-    } else {
-      // console.log(initialColumns)
-    }
+    // if (initialColumns === null) {
+    // setInitialColumns(args.component._controllers.stateStoring._state.columns)
+    // console.log(args.component._controllers.stateStoring._state.columns)
+    // } else {
+    // console.log(initialColumns)
+    // }
     // console.log(args.component._controllers.stateStoring._state)
   }, 1000)
   const rowUpdated = (e) => {
@@ -213,6 +210,12 @@ const App = () => {
         in the first option, should there be a debounce maybe so that we can poll multiple writes, for example every 10 seconds?
         if()
     */
+  }
+
+  const fetchColumns = async () => {
+    const res = await fetch(process.env.API_URL + `users/no-role/settings`)
+    if (!res.ok) throw new Error(res.statusText)
+    return res.json();
   }
 
   useEffect(() => {
@@ -231,8 +234,8 @@ const App = () => {
         (result) => {
           setSettings(result)
           setGridFilterValue(JSON.parse(result[0].filters))
-          console.log(result[0].columns)
-          setColumns(result[0].columns)
+          // console.log(result[0].columns)
+          // setColumns(result[0].columns)
         }, (error) => {
           setError(error)
         })
@@ -244,54 +247,61 @@ const App = () => {
       {/* <StyledModal isOpen={modalOpen}>
         Loading...
       </StyledModal> */}
-      <div className="filter-container">
-      <Async promiseFn={receiveColumns}>
-      <Async.Fulfilled>
-          <FilterBuilder
-            fields={columns}
-            value={gridFilterValue}
-            onValueChanged={onFilterValueChanged} />
-          <Button
-            text="Apply Filter"
-            type="default"
-            onClick={applyFilter} />
-          <div className="dx-clearfix"></div>
-          <DataGrid
+      <Async promiseFn={fetchColumns}>
+        <Async.Loading>Loading..</Async.Loading>
+        <Async.Fulfilled>
+          {columns => (
+            <div>
+              <div className="filter-container">
+                <FilterBuilder
+                  fields={columns[0].columns}
+                  value={gridFilterValue}
+                  onValueChanged={onFilterValueChanged} />
+                <Button
+                  text="Apply Filter"
+                  type="default"
+                  onClick={applyFilter} />
+              </div>
 
-        {...gridParams}
-        dataSource={data}
-        customizeColumns={e => customizeColumns(e)}
-        onEditingStart={(e) => startingToEdit(e)}
-        onRowUpdated={(e) => rowUpdated(e)}
-        allowColumnReordering={true}
-        allowColumnResizing={true}
-        columnHidingEnabled={true}
-        onInitialized={onInitialized}
-        onCellClick={cellClicked}
-        onContextMenuPreparing={prepareContextMenu}
-        ref={gridRef}
-        filterValue={gridFilterValue}
-        columns={columns}
+              <div className="dx-clearfix"></div>
+              <div>
+                <DataGrid
 
-      >
-        <Grouping contextMenuEnabled={true} />
-        <GroupPanel visible={groupPanelVisible} /> {/* or "auto" */}
-        <ColumnChooser enabled={true} />
+                  {...gridParams}
+                  dataSource={data}
+                  customizeColumns={e => customizeColumns(e)}
+                  onEditingStart={(e) => startingToEdit(e)}
+                  onRowUpdated={(e) => rowUpdated(e)}
+                  allowColumnReordering={true}
+                  allowColumnResizing={true}
+                  columnHidingEnabled={true}
+                  onInitialized={onInitialized}
+                  onCellClick={cellClicked}
+                  onContextMenuPreparing={prepareContextMenu}
+                  ref={gridRef}
+                  filterValue={gridFilterValue}
+                  columns={columns[0].columns}
 
-        <Editing
-          mode="cell"
-          allowUpdating={true} />
-      </DataGrid>
+                >
+                  <Grouping contextMenuEnabled={true} />
+                  <GroupPanel visible={groupPanelVisible} /> {/* or "auto" */}
+                  <ColumnChooser enabled={true} />
+
+                  <Editing
+                    mode="cell"
+                    allowUpdating={true} />
+                </DataGrid>
+              </div>
+            </div>
+
+          )}
+
         </Async.Fulfilled>
       </Async>
-        
-
-      </div>
 
 
-
-      
     </div>
+
   )
 }
 

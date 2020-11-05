@@ -1,8 +1,9 @@
 import { createStore, action, thunk } from 'easy-peasy';
 
 const columnModel = {
-  columns: null,
+  columns: [{}],
   setColumns: action((state, payload) => {
+    console.log("setting columns")
     state.columns = payload
   }),
   setAllColumns: action((state, payload) => {
@@ -11,10 +12,10 @@ const columnModel = {
   receiveColumns: thunk(async (actions, payload) => {
     await actions.receiveAllColumns()
   }),
-  receiveAllColumns :thunk(async (actions, payload, { getState }) => {
+  receiveAllColumns: thunk(async (actions, payload, { getState }) => {
     console.log('inside receiveCols')
     const { columns } = getState()
-   
+
     await actions.setAllColumns(columns)
   }),
 };
