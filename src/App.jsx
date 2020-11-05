@@ -1,15 +1,19 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
-import DataGrid, { Button, Column, ColumnChooser, Editing, GroupPanel, Grouping } from 'devextreme-react/data-grid';
+import DataGrid, { Column, ColumnChooser, Editing, GroupPanel, Grouping } from 'devextreme-react/data-grid';
+import Button from 'devextreme-react/button';
+
 import 'devextreme/dist/css/dx.common.css';
 import 'devextreme/dist/css/dx.light.css';
 import './styles/icons.css'
+import './styles/filter.css'
 import _ from "lodash"
 import { StoreProvider, useStoreActions, useStoreState } from "easy-peasy";
 import store from './utils/store'
 import { ModalProvider } from "styled-react-modal";
-import { StyledModal } from "./components/Modal"
-import { Hide } from "devextreme-react/tree-list";
+import FilterBuilder from 'devextreme-react/filter-builder';
+import Async from 'react-async'
+
 
 const App = () => {
   const gridParams = {
@@ -27,9 +31,12 @@ const App = () => {
   const [completed, setCompleted] = useState(false)
   const [lastColumnHidden, setLastColumnHidden] = useState(null)
   const [groupPanelVisible, setGroupPanelVisible] = useState(true)
+  const [gridFilterValue, setGridFilterValue] = useState(null)
 
-  const setInitialColumns = useStoreActions(actions => actions.columns.setInitialColumns)
-  const initialColumns = useStoreState(state => state.columns.initialColumns)
+  const setColumns = useStoreActions(actions => actions.columns.setInitialColumns)
+  const columns = useStoreState(state => state.columns.columns)
+  const receiveColumns = useStoreActions(actions => actions.columns.receiveColumns)
+
 
   const setData = useStoreActions(actions => actions.data.setData)
   const data = useStoreState(state => state.data.data)
@@ -55,15 +62,16 @@ const App = () => {
 
   const customizeColumns = (columns) => {
     columns.forEach((column, index) => {
-      if (settings[0].order[index].visible) {
-        column.visibleIndex = settings[0].order[index].visibleIndex
+      console.log(settings[0])
+      if (settings[0].columns[index].visible) {
+        column.visibleIndex = settings[0].columns[index].visibleIndex
       } else {
         column.visible = false
       }
 
-      if (settings[0].order[index].groupIndex) {
+      if (settings[0].columns[index].groupIndex) {
         // console.log("Column at index " + index + " (field = " + column.dataField + ") should have a groupIndex of " + settings[0].order[index].groupIndex)
-        column.groupIndex = settings[0].order[index].groupIndex
+        // column.groupIndex = settings[0].order[index].groupIndex
       }
 
 
@@ -72,6 +80,14 @@ const App = () => {
     console.log(gridRef.current.instance)
   }
 
+  const applyFilter = (e) => {
+    setGridFilterValue(e)
+  }
+
+  const onFilterValueChanged = (e) => {
+    console.log(e.value)
+    setGridFilterValue(e.value)
+  }
 
 
   const prepareContextMenu = (ctx) => {
@@ -133,6 +149,11 @@ const App = () => {
     }
   }
 
+  // same as comment above
+  function bestFitAllColumns(e, ctx) {
+    // if(ctx.column && e.itemData.ixon === "fit-all")
+  }
+
   function toggleGroupPanelVisibility(e, ctx) {
     if (e.itemData.icon === "groupPanel") {
       if (groupPanelVisible) {
@@ -141,21 +162,17 @@ const App = () => {
         setGroupPanelVisible(true)
       }
     }
-
   }
 
 
-  // same as comment above
-  function bestFitAllColumns(e, ctx) {
-    // if(ctx.column && e.itemData.ixon === "fit-all")
-  }
+
 
   // final useEffect to hide Modal if something can't be done synchronously..
-  useEffect(() => {
-    if (!isLoading) {
-      setModalOpen(false)
-    }
-  }, [isLoading])
+  // useEffect(() => {
+  //   if (!isLoading) {
+  //     setModalOpen(false)
+  //   }
+  // }, [isLoading])
 
 
 
@@ -203,7 +220,7 @@ const App = () => {
       .then(res => res.json())
       .then(
         (result) => {
-          setColumnNames(Object.keys(result[0]))
+          // setColumnNames(Object.keys(result[0]))
           setData(result)
         }, (error) => {
           setError(error)
@@ -213,6 +230,9 @@ const App = () => {
       .then(
         (result) => {
           setSettings(result)
+          setGridFilterValue(JSON.parse(result[0].filters))
+          console.log(result[0].columns)
+          setColumns(result[0].columns)
         }, (error) => {
           setError(error)
         })
@@ -224,7 +244,19 @@ const App = () => {
       {/* <StyledModal isOpen={modalOpen}>
         Loading...
       </StyledModal> */}
-      <DataGrid
+      <div className="filter-container">
+      <Async promiseFn={receiveColumns}>
+      <Async.Fulfilled>
+          <FilterBuilder
+            fields={columns}
+            value={gridFilterValue}
+            onValueChanged={onFilterValueChanged} />
+          <Button
+            text="Apply Filter"
+            type="default"
+            onClick={applyFilter} />
+          <div className="dx-clearfix"></div>
+          <DataGrid
 
         {...gridParams}
         dataSource={data}
@@ -238,6 +270,9 @@ const App = () => {
         onCellClick={cellClicked}
         onContextMenuPreparing={prepareContextMenu}
         ref={gridRef}
+        filterValue={gridFilterValue}
+        columns={columns}
+
       >
         <Grouping contextMenuEnabled={true} />
         <GroupPanel visible={groupPanelVisible} /> {/* or "auto" */}
@@ -247,11 +282,18 @@ const App = () => {
           mode="cell"
           allowUpdating={true} />
       </DataGrid>
+        </Async.Fulfilled>
+      </Async>
+        
+
+      </div>
+
+
+
+      
     </div>
   )
 }
-
-  ;
 
 ReactDOM.render(
   <StoreProvider store={store}>
