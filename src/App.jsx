@@ -1,38 +1,37 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
+
+import _ from "lodash"
+import Async from 'react-async'
+import { StoreProvider, useStoreActions, useStoreState } from "easy-peasy";
+
+import FilterBuilder from 'devextreme-react/filter-builder';
 import DataGrid, { Column, ColumnChooser, Editing, GroupPanel, Grouping } from 'devextreme-react/data-grid';
 import Button from 'devextreme-react/button';
 
-import 'devextreme/dist/css/dx.common.css';
-import 'devextreme/dist/css/dx.light.css';
-import './styles/icons.css'
-import './styles/filter.css'
-import _ from "lodash"
-import { StoreProvider, useStoreActions, useStoreState } from "easy-peasy";
 import store from './utils/store'
-import { ModalProvider } from "styled-react-modal";
-import FilterBuilder from 'devextreme-react/filter-builder';
-import Async from 'react-async'
+import { fetchColumns } from './utils/api'
+import { rowUpdated, customizeColumns } from './utils/gridActions'
+import './styles/base.css'
 
 
 const App = () => {
   const gridParams = {
-    showBorders: true
+    showBorders: true,
+    allowColumnReordering: true,
+    allowColumnResizing: true,
+    columnHidingEnabled: true
   }
-  const gridRef = useRef(null)
 
+  const gridRef = useRef(null)
   const [error, setError] = useState(null);
   const [event, setEvent] = useState(null)
   const [initVal, setInitVal] = useState(null)
   const [intendedCellToEdit, setIntendedCellToEdit] = useState(null)
-  const [completed, setCompleted] = useState(false)
   const [lastColumnHidden, setLastColumnHidden] = useState(null)
   const [groupPanelVisible, setGroupPanelVisible] = useState(true)
   const [gridFilterValue, setGridFilterValue] = useState(null)
-
-  const setColumns = useStoreActions(actions => actions.columns.setInitialColumns)
-  const columns = useStoreState(state => state.columns.columns)
-  const receiveColumns = useStoreActions(actions => actions.columns.receiveColumns)
+  const [pendingChanges, setPendingChanges] = useState(false)
 
 
   const setData = useStoreActions(actions => actions.data.setData)
@@ -41,8 +40,13 @@ const App = () => {
   const setSettings = useStoreActions(actions => actions.settings.setSettings)
   const settings = useStoreState(state => state.settings.settings)
 
+  const setParameters = useStoreActions(actions => actions.parameters.setParameters)
+  const parameters = useStoreState(state => state.parameters.parameters)
+
   // 1st state update: cell focused
   useEffect(() => {
+    console.log('yes')
+    console.log(event)
     if (event) {
       setIntendedCellToEdit(event.column.dataField)
     }
@@ -50,35 +54,20 @@ const App = () => {
 
   // 2nd state update: capture the value of that cell
   useEffect(() => {
-    if (event) {
+    if (intendedCellToEdit) {
       console.log("intendedCell captured of column: " + intendedCellToEdit + " and content " + event.data[intendedCellToEdit])
+      console.log(event.data[intendedCellToEdit])
       setInitVal(event.data[intendedCellToEdit])
     }
   }, [intendedCellToEdit])
 
 
-  const customizeColumns = (columns) => {
-    columns.forEach((column, index) => {
-      console.log(settings[0])
-      if (settings[0].columns[index].visible) {
-        column.visibleIndex = settings[0].columns[index].visibleIndex
-      } else {
-        column.visible = false
-      }
+  // const applyFilter = (e) => {
+  //   setGridFilterValue(e)
+  // }
 
-      if (settings[0].columns[index].groupIndex) {
-        // console.log("Column at index " + index + " (field = " + column.dataField + ") should have a groupIndex of " + settings[0].order[index].groupIndex)
-        // column.groupIndex = settings[0].order[index].groupIndex
-      }
+  const saveChanges = () => {
 
-
-    })
-    console.log("logging instance")
-    console.log(gridRef.current.instance)
-  }
-
-  const applyFilter = (e) => {
-    setGridFilterValue(e)
   }
 
   const onFilterValueChanged = (e) => {
@@ -136,6 +125,16 @@ const App = () => {
     }
   }
 
+  function toggleGroupPanelVisibility(e, ctx) {
+    if (e.itemData.icon === "groupPanel") {
+      if (groupPanelVisible) {
+        setGroupPanelVisible(false)
+      } else {
+        setGroupPanelVisible(true)
+      }
+    }
+  }
+
   // auto not an option on devextreme? Have to repaint the grid?
   function bestFitColumn(e, ctx) {
     if (ctx.column && e.itemData.icon === "resize") {
@@ -151,35 +150,18 @@ const App = () => {
     // if(ctx.column && e.itemData.ixon === "fit-all")
   }
 
-  function toggleGroupPanelVisibility(e, ctx) {
-    if (e.itemData.icon === "groupPanel") {
-      if (groupPanelVisible) {
-        setGroupPanelVisible(false)
-      } else {
-        setGroupPanelVisible(true)
-      }
-    }
-  }
-
-
-
-
-  // final useEffect to hide Modal if something can't be done synchronously..
-  // useEffect(() => {
-  //   if (!isLoading) {
-  //     setModalOpen(false)
-  //   }
-  // }, [isLoading])
 
 
 
   const startingToEdit = (e) => {
     // cell is in focus
+    console.log('in here')
     // we can get the values for that row before updating anything
     const { _id, uid, name, role, email, modules, details } = e.data
     /*  devextreme events are synchronous but our state is updating asynchronously. Let everything that needs to happen, 
         happen in the useEffect hooks, with the corresponding dependency array
     */
+    console.log(e)
     setEvent(e);
   }
 
@@ -193,6 +175,7 @@ const App = () => {
   }
 
   const onColumnsChanging = _.debounce((args) => {
+    console.log("columns changing")
     console.log(gridRef.current.instance)
     // if (initialColumns === null) {
     // setInitialColumns(args.component._controllers.stateStoring._state.columns)
@@ -202,21 +185,8 @@ const App = () => {
     // }
     // console.log(args.component._controllers.stateStoring._state)
   }, 1000)
-  const rowUpdated = (e) => {
-    // cell is in focus
-    // we can get the values for that row before updating anything
-    console.log("row updated")
-    /*  Should the api be updated after each event or should a button "Save changes" write updates in batch?
-        in the first option, should there be a debounce maybe so that we can poll multiple writes, for example every 10 seconds?
-        if()
-    */
-  }
 
-  const fetchColumns = async () => {
-    const res = await fetch(process.env.API_URL + `users/no-role/settings`)
-    if (!res.ok) throw new Error(res.statusText)
-    return res.json();
-  }
+
 
   useEffect(() => {
     fetch(process.env.API_URL + `users/no-role`)
@@ -244,49 +214,45 @@ const App = () => {
 
   return (
     <div>
-      {/* <StyledModal isOpen={modalOpen}>
-        Loading...
-      </StyledModal> */}
       <Async promiseFn={fetchColumns}>
         <Async.Loading>Loading..</Async.Loading>
         <Async.Fulfilled>
           {columns => (
             <div>
+              <Button
+                text={pendingChanges ? "Pending Changes" : "Synchronised"}
+                disabled={!pendingChanges}
+                type="default"
+                onClick={saveChanges} />
               <div className="filter-container">
                 <FilterBuilder
                   fields={columns[0].columns}
                   value={gridFilterValue}
                   onValueChanged={onFilterValueChanged} />
-                <Button
+                {/* <Button
                   text="Apply Filter"
                   type="default"
-                  onClick={applyFilter} />
+                  onClick={applyFilter} /> */}
               </div>
 
               <div className="dx-clearfix"></div>
               <div>
                 <DataGrid
-
                   {...gridParams}
                   dataSource={data}
-                  customizeColumns={e => customizeColumns(e)}
+                  customizeColumns={e => customizeColumns(e, settings)}
                   onEditingStart={(e) => startingToEdit(e)}
                   onRowUpdated={(e) => rowUpdated(e)}
-                  allowColumnReordering={true}
-                  allowColumnResizing={true}
-                  columnHidingEnabled={true}
                   onInitialized={onInitialized}
                   onCellClick={cellClicked}
                   onContextMenuPreparing={prepareContextMenu}
                   ref={gridRef}
                   filterValue={gridFilterValue}
                   columns={columns[0].columns}
-
                 >
                   <Grouping contextMenuEnabled={true} />
                   <GroupPanel visible={groupPanelVisible} /> {/* or "auto" */}
                   <ColumnChooser enabled={true} />
-
                   <Editing
                     mode="cell"
                     allowUpdating={true} />
@@ -307,9 +273,7 @@ const App = () => {
 
 ReactDOM.render(
   <StoreProvider store={store}>
-    <ModalProvider>
-      <App />
-    </ModalProvider>
+    <App />
   </StoreProvider>
   ,
   document.getElementById("app"));
