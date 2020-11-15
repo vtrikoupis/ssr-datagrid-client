@@ -9,7 +9,7 @@ module.exports = {
   },
 
   resolve: {
-    extensions: [".jsx", ".js", ".json"],
+    extensions: [".ts", ".tsx", ".js", ".jsx", ".json"]
   },
 
   devServer: {
@@ -28,15 +28,12 @@ module.exports = {
         test: /\.(eot|svg|ttf|woff|woff2)$/,
         use: "url-loader?name=[name].[ext]"
       },
-      {
-        test: /\.(js|jsx)$/,
-        exclude: /node_modules/,
-        use: {
-          loader: "babel-loader",
-        },
-      },
+      { test: /\.(t|j)sx?$/, use: { loader: 'ts-loader' }, exclude: /node_modules/ },
+
+      { enforce: "pre", test: /\.js$/, exclude: /node_modules/, loader: "source-map-loader" }
     ],
   },
+  devtool: "source-map",
 
   plugins: [
     new ModuleFederationPlugin({

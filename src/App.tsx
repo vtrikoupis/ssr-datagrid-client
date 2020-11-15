@@ -1,9 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import ReactDOM from "react-dom";
+import * as React from "react";
+import { useEffect, useRef, useState } from "react"
+import * as ReactDOM from "react-dom";
 
-import _ from "lodash"
+import * as _ from "lodash"
 import Async from 'react-async'
-import { StoreProvider, useStoreActions, useStoreState } from "easy-peasy";
+import { StoreProvider, useStoreActions, useStoreState, createTypedHooks } from "easy-peasy";
 
 import FilterBuilder from 'devextreme-react/filter-builder';
 import DataGrid, { Column, ColumnChooser, Editing, GroupPanel, Grouping } from 'devextreme-react/data-grid';
@@ -12,7 +13,9 @@ import Button from 'devextreme-react/button';
 import store from './utils/store'
 import { fetchColumns } from './utils/api'
 import { rowUpdated, customizeColumns } from './utils/gridActions'
+import { difference } from './utils/difference'
 import './styles/base.css'
+import { StoreModel } from "./utils/model";
 
 
 const App = () => {
@@ -25,7 +28,7 @@ const App = () => {
 
   const gridRef = useRef(null)
   const [error, setError] = useState(null);
-  const [event, setEvent] = useState(null)
+  const [event, setEvent] = useState(null || [])
   const [initVal, setInitVal] = useState(null)
   const [intendedCellToEdit, setIntendedCellToEdit] = useState(null)
   const [lastColumnHidden, setLastColumnHidden] = useState(null)
@@ -33,20 +36,24 @@ const App = () => {
   const [gridFilterValue, setGridFilterValue] = useState(null)
   const [pendingChanges, setPendingChanges] = useState(false)
 
+  const { useStoreActions, useStoreState, useStoreDispatch, useStore } = createTypedHooks<StoreModel>();
 
-  const setData = useStoreActions(actions => actions.data.setData)
-  const data = useStoreState(state => state.data.data)
+  const setData = useStoreActions(actions => actions.dataModel.setData)
+  const data = useStoreState(state => state.dataModel.data)
 
-  const setSettings = useStoreActions(actions => actions.settings.setSettings)
-  const settings = useStoreState(state => state.settings.settings)
+  const setValueToTrack = useStoreActions(actions => actions.dataModel.setValueToTrack)
+  const valueToTrack = useStoreState(state => state.dataModel.valueToTrack)
 
-  const setParameters = useStoreActions(actions => actions.parameters.setParameters)
-  const parameters = useStoreState(state => state.parameters.parameters)
+  const setSettings = useStoreActions(actions => actions.settingsModel.setSettings)
+  const settings = useStoreState(state => state.settingsModel.settings)
+
+  const setParameters = useStoreActions(actions => actions.parametersModel.setParameters)
+  const parameters = useStoreState(state => state.parametersModel.parameters)
+
+
 
   // 1st state update: cell focused
   useEffect(() => {
-    console.log('yes')
-    console.log(event)
     if (event) {
       setIntendedCellToEdit(event.column.dataField)
     }
@@ -56,15 +63,25 @@ const App = () => {
   useEffect(() => {
     if (intendedCellToEdit) {
       console.log("intendedCell captured of column: " + intendedCellToEdit + " and content " + event.data[intendedCellToEdit])
-      console.log(event.data[intendedCellToEdit])
-      setInitVal(event.data[intendedCellToEdit])
+
+      // on the first iteration
+      if (!valueToTrack) {
+        setValueToTrack(event.data)
+      }
     }
   }, [intendedCellToEdit])
 
+  /**
+   * Things that can change should be synchronized:
+   * filters, column order/visibility, grouping, data
+   * 
+   */
 
-  // const applyFilter = (e) => {
-  //   setGridFilterValue(e)
-  // }
+  useEffect(() => {
+
+
+  })
+
 
   const saveChanges = () => {
 
@@ -186,6 +203,9 @@ const App = () => {
     // console.log(args.component._controllers.stateStoring._state)
   }, 1000)
 
+  const onValueChanged = () => {
+    console.log("value changed")
+  }
 
 
   useEffect(() => {
@@ -249,6 +269,7 @@ const App = () => {
                   ref={gridRef}
                   filterValue={gridFilterValue}
                   columns={columns[0].columns}
+                  onValueChanged={onValueChanged}
                 >
                   <Grouping contextMenuEnabled={true} />
                   <GroupPanel visible={groupPanelVisible} /> {/* or "auto" */}
