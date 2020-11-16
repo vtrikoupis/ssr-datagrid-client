@@ -16,7 +16,10 @@ import { rowUpdated, customizeColumns } from './utils/gridActions'
 import { difference } from './utils/difference'
 import './styles/base.css'
 import { StoreModel } from "./utils/model";
+import { dxEvent } from "devextreme/events";
 
+import DevExpress from "devextreme";
+import dxDataGrid from "devextreme/ui/data_grid";
 
 const App = () => {
   const gridParams = {
@@ -26,11 +29,12 @@ const App = () => {
     columnHidingEnabled: true
   }
 
-  const gridRef = useRef(null)
+
+  const gridRef = useRef(null || dxDataGrid)
   const [error, setError] = useState(null);
-  const [event, setEvent] = useState(null || [])
+  const [event, setEvent] = useState(null || new dxEvent)
   const [initVal, setInitVal] = useState(null)
-  const [intendedCellToEdit, setIntendedCellToEdit] = useState(null)
+  const [intendedCellToEdit, setIntendedCellToEdit] = useState(null || "")
   const [lastColumnHidden, setLastColumnHidden] = useState(null)
   const [groupPanelVisible, setGroupPanelVisible] = useState(true)
   const [gridFilterValue, setGridFilterValue] = useState(null)
@@ -100,19 +104,19 @@ const App = () => {
           "text": "Hide Column",
           "disabled": false,
           "icon": "hide",
-          "onItemClick": (e) => hideColumn(e, ctx)
+          "onItemClick": (e: dxEvent) => hideColumn(e, ctx)
         },
         {
           "text": groupPanelVisible ? "Hide GroupPanel" : "Show GroupPanel",
           "icon": "groupPanel",
           "disabled": false,
-          "onItemClick": (e) => toggleGroupPanelVisibility(e, ctx)
+          "onItemClick": (e: dxEvent) => toggleGroupPanelVisibility(e, ctx)
         },
         {
           "text": "Unhide last Column",
           "disabled": false,
           "icon": "unhide",
-          "onItemClick": (e) => unhideColumn(e, ctx)
+          "onItemClick": (e: dxEvent) => unhideColumn(e, ctx)
         },
         // {
         //   "text": "Best Fit Column",
@@ -142,7 +146,7 @@ const App = () => {
     }
   }
 
-  function toggleGroupPanelVisibility(e, ctx) {
+  function toggleGroupPanelVisibility(e: dxEvent, ctx) {
     if (e.itemData.icon === "groupPanel") {
       if (groupPanelVisible) {
         setGroupPanelVisible(false)
@@ -170,16 +174,16 @@ const App = () => {
 
 
 
-  const startingToEdit = (e) => {
+  const startingToEdit = (e: React.SetStateAction<dxEvent | undefined>) => {
     // cell is in focus
     console.log('in here')
     // we can get the values for that row before updating anything
-    const { _id, uid, name, role, email, modules, details } = e.data
+    const { _id, uid, name, role, email, modules, details } = event.data
     /*  devextreme events are synchronous but our state is updating asynchronously. Let everything that needs to happen, 
         happen in the useEffect hooks, with the corresponding dependency array
     */
     console.log(e)
-    setEvent(e);
+    // setEvent(event);
   }
 
   function onInitialized(e) {
@@ -187,7 +191,7 @@ const App = () => {
 
   }
 
-  function cellClicked(e) {
+  function cellClicked(e:) {
     console.log(e)
   }
 
