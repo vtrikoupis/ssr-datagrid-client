@@ -55,6 +55,7 @@ const App = () => {
   // 2nd state update: capture the value of that cell
   useEffect(() => {
     if (intendedCellToEdit) {
+      console.log((event.data))
       console.log("intendedCell captured of column: " + intendedCellToEdit + " and content " + event.data[intendedCellToEdit])
       console.log(event.data[intendedCellToEdit])
       setInitVal(event.data[intendedCellToEdit])
