@@ -220,6 +220,9 @@ const App = () => {
         <Async.Fulfilled>
           {columns => (
             <div>
+              {console.log("cols")}
+              {console.log(columns)}
+
               <Button
                 text={pendingChanges ? "Pending Changes" : "Synchronised"}
                 disabled={!pendingChanges}
