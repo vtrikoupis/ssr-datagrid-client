@@ -257,60 +257,52 @@ const App = () => {
           if (error) return `Something went wrong: ${error.message}`
           if (data) return (
             <div>
-              {
-                data.map((col) => {
-                  <div>
-                    {console.log(col.columns)}
+              <div>
+                <Button
+                  text={pendingChanges ? "Pending Changes" : "Synchronised"}
+                  disabled={!pendingChanges}
+                  type="default"
+                  onClick={saveChanges} />
+                <div className="filter-container">
 
-                    <Button
-                      text={pendingChanges ? "Pending Changes" : "Synchronised"}
-                      disabled={!pendingChanges}
-                      type="default"
-                      onClick={saveChanges} />
-                    <div className="filter-container">
+                  <FilterBuilder
+                    fields={data[0].columns as Array<dxFilterBuilderField>}
+                    value={gridFilterValue || []}
+                    onValueChanged={onFilterValueChanged} />
 
-                      <FilterBuilder
-                        fields={col.columns as Array<dxFilterBuilderField>}
-                        value={gridFilterValue || []}
-                        onValueChanged={onFilterValueChanged} />
-
-                      {/* <Button
+                  {/* <Button
                   text="Apply Filter"
                   type="default"
                   onClick={applyFilter} /> */}
-                    </div>
+                </div>
 
-                    <div className="dx-clearfix"></div>
-                    <div>
-                      <DataGrid
-                        {...gridParams}
-                        dataSource={gridData}
-                        customizeColumns={e => customizeColumns(e, settings)}
-                        onEditingStart={e => startingToEdit(e as DxDataGridEditingStartEvent)}
-                        onRowUpdated={(e) => rowUpdated(e)}
-                        onInitialized={onInitialized}
-                        onCellClick={cellClicked}
-                        onContextMenuPreparing={prepareContextMenu}
-                        ref={gridRef}
-                        filterValue={gridFilterValue || []}
-                        columns={col.columns as Array<dxDataGridColumn>}
-                      // onValueChanged={onValueChanged}
-                      >
-                        <Grouping contextMenuEnabled={true} />
-                        <GroupPanel visible={groupPanelVisible} /> {/* or "auto" */}
-                        <ColumnChooser enabled={true} />
-                        <Editing
-                          mode="cell"
-                          allowUpdating={true} />
-                      </DataGrid>
-                    </div>
+                <div className="dx-clearfix"></div>
+                <div>
+                  <DataGrid
+                    {...gridParams}
+                    dataSource={gridData}
+                    customizeColumns={e => customizeColumns(e, settings)}
+                    onEditingStart={e => startingToEdit(e as DxDataGridEditingStartEvent)}
+                    onRowUpdated={(e) => rowUpdated(e)}
+                    onInitialized={onInitialized}
+                    onCellClick={cellClicked}
+                    onContextMenuPreparing={prepareContextMenu}
+                    ref={gridRef}
+                    filterValue={gridFilterValue || []}
+                    columns={data[0].columns as Array<dxDataGridColumn>}
+                  // onValueChanged={onValueChanged}
+                  >
+                    <Grouping contextMenuEnabled={true} />
+                    <GroupPanel visible={groupPanelVisible} /> {/* or "auto" */}
+                    <ColumnChooser enabled={true} />
+                    <Editing
+                      mode="cell"
+                      allowUpdating={true} />
+                  </DataGrid>
+                </div>
 
-                  </div>
-                })
-              }
+              </div>
             </div>
-
-
           )
         }
         }
