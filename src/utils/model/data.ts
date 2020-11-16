@@ -3,17 +3,17 @@ import { Action, action } from "easy-peasy";
 
 
 export interface DataModel {
-  data: [];
-  setData: Action<DataModel, []>;
+  gridData: [];
+  setGridData: Action<DataModel, []>;
   valueToTrack: [],
   setValueToTrack: Action<DataModel, []>
   
 }
 
 const dataModel: DataModel = {
-  data: [],
-  setData: action((state, payload) => {
-    state.data = payload;
+  gridData: [],
+  setGridData: action((state, payload) => {
+    state.gridData = payload;
   }),
   valueToTrack: [],
   setValueToTrack: action((state, payload) => {

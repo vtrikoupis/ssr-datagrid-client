@@ -19,6 +19,13 @@ module.exports = {
   module: {
     rules: [
       {
+        test: /bootstrap\.tsx$/,
+        loader: "bundle-loader",
+        options: {
+          lazy: true,
+        },
+      },
+      {
         test: /\.css$/,
         use: [
           { loader: "style-loader" },
@@ -28,8 +35,14 @@ module.exports = {
         test: /\.(eot|svg|ttf|woff|woff2)$/,
         use: "url-loader?name=[name].[ext]"
       },
-      { test: /\.(t|j)sx?$/, use: { loader: 'ts-loader' }, exclude: /node_modules/ },
-
+      {
+        test: /\.tsx?$/,
+        loader: "babel-loader",
+        exclude: /node_modules/,
+        options: {
+          presets: ["@babel/preset-react", "@babel/preset-typescript"],
+        },
+      },
       { enforce: "pre", test: /\.js$/, exclude: /node_modules/, loader: "source-map-loader" }
     ],
   },

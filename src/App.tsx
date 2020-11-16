@@ -10,16 +10,23 @@ import FilterBuilder from 'devextreme-react/filter-builder';
 import DataGrid, { Column, ColumnChooser, Editing, GroupPanel, Grouping } from 'devextreme-react/data-grid';
 import Button from 'devextreme-react/button';
 
-import store from './utils/store'
 import { fetchColumns } from './utils/api'
 import { rowUpdated, customizeColumns } from './utils/gridActions'
 import { difference } from './utils/difference'
 import './styles/base.css'
 import { StoreModel } from "./utils/model";
 import { dxEvent } from "devextreme/events";
+import { DxDataGridEditingStartEvent } from "./utils/dx-types/dx-data-grid-editing-start.event"
+import { DxContextMenuItemClickEvent } from "./utils/dx-types/dx-context-menu-item-click.event";
 
 import DevExpress from "devextreme";
 import dxDataGrid from "devextreme/ui/data_grid";
+import dxFilterBuilder from "devextreme/ui/filter_builder";
+import { dxFilterBuilderField } from "devextreme/ui/filter_builder";
+import { dxDataGridColumn } from "devextreme/ui/data_grid";
+
+// declare const initDxDataGridEvent: DxDataGridEditingStartEvent;
+declare const initCtxMenuEvent: DxContextMenuItemClickEvent;
 
 const App = () => {
   const gridParams = {
@@ -30,20 +37,20 @@ const App = () => {
   }
 
 
-  const gridRef = useRef(null || dxDataGrid)
+  const gridRef = useRef(null)
   const [error, setError] = useState(null);
-  const [event, setEvent] = useState(null || new dxEvent)
+  const [event, setEvent] = useState(null)
   const [initVal, setInitVal] = useState(null)
   const [intendedCellToEdit, setIntendedCellToEdit] = useState(null || "")
-  const [lastColumnHidden, setLastColumnHidden] = useState(null)
+  const [lastColumnHidden, setLastColumnHidden] = useState(null || 0)
   const [groupPanelVisible, setGroupPanelVisible] = useState(true)
   const [gridFilterValue, setGridFilterValue] = useState(null)
   const [pendingChanges, setPendingChanges] = useState(false)
 
   const { useStoreActions, useStoreState, useStoreDispatch, useStore } = createTypedHooks<StoreModel>();
 
-  const setData = useStoreActions(actions => actions.dataModel.setData)
-  const data = useStoreState(state => state.dataModel.data)
+  const setGridData = useStoreActions(actions => actions.dataModel.setGridData)
+  const gridData = useStoreState(state => state.dataModel.gridData)
 
   const setValueToTrack = useStoreActions(actions => actions.dataModel.setValueToTrack)
   const valueToTrack = useStoreState(state => state.dataModel.valueToTrack)
@@ -58,8 +65,8 @@ const App = () => {
 
   // 1st state update: cell focused
   useEffect(() => {
-    if (event) {
-      setIntendedCellToEdit(event.column.dataField)
+    if (event) { // it's not null ↴
+      setIntendedCellToEdit(event.column.dataField!) // exclamation mark tells typescript, that you guarantee it's not null.
     }
   }, [event])
 
@@ -91,32 +98,32 @@ const App = () => {
 
   }
 
-  const onFilterValueChanged = (e) => {
+  const onFilterValueChanged = (e: any) => {
     console.log(e.value)
     setGridFilterValue(e.value)
   }
 
 
-  const prepareContextMenu = (ctx) => {
+  const prepareContextMenu = (ctx: any) => {
     if (ctx.target == "header") {
       ctx.items.push(
         {
           "text": "Hide Column",
           "disabled": false,
           "icon": "hide",
-          "onItemClick": (e: dxEvent) => hideColumn(e, ctx)
+          "onItemClick": (e: DxContextMenuItemClickEvent) => hideColumn(e, ctx)
         },
         {
           "text": groupPanelVisible ? "Hide GroupPanel" : "Show GroupPanel",
           "icon": "groupPanel",
           "disabled": false,
-          "onItemClick": (e: dxEvent) => toggleGroupPanelVisibility(e, ctx)
+          "onItemClick": (e: DxContextMenuItemClickEvent) => toggleGroupPanelVisibility(e, ctx)
         },
         {
           "text": "Unhide last Column",
           "disabled": false,
           "icon": "unhide",
-          "onItemClick": (e: dxEvent) => unhideColumn(e, ctx)
+          "onItemClick": (e: DxContextMenuItemClickEvent) => unhideColumn(e, ctx)
         },
         // {
         //   "text": "Best Fit Column",
@@ -129,7 +136,7 @@ const App = () => {
   }
 
   // pass the event and the context
-  function hideColumn(e, ctx) {
+  function hideColumn(e: DxContextMenuItemClickEvent, ctx: any) {
     // could use the itemIndex but as we add more items this might change whereas the icon id will be set to hide
     if (ctx.column && e.itemData.icon === "hide") {
       gridRef.current.instance.columnOption(ctx.column.visibleIndex, 'visible', false)
@@ -137,16 +144,19 @@ const App = () => {
     }
   }
 
-  function unhideColumn(e, ctx) {
+  function unhideColumn(e: DxContextMenuItemClickEvent, ctx: any) {
+    // React.useLayoutEffect(() => {
     // could use the itemIndex but as we add more items this might change whereas the icon id will be set to hide
     if (ctx.column && e.itemData.icon === "unhide") {
-      if (lastColumnHidden) {
+      if (lastColumnHidden && gridRef) {
         gridRef.current.instance.columnOption(lastColumnHidden, 'visible', true)
       }
     }
+    // })
+
   }
 
-  function toggleGroupPanelVisibility(e: dxEvent, ctx) {
+  function toggleGroupPanelVisibility(e: DxContextMenuItemClickEvent, ctx: any) {
     if (e.itemData.icon === "groupPanel") {
       if (groupPanelVisible) {
         setGroupPanelVisible(false)
@@ -157,24 +167,24 @@ const App = () => {
   }
 
   // auto not an option on devextreme? Have to repaint the grid?
-  function bestFitColumn(e, ctx) {
+  function bestFitColumn(e: DxContextMenuItemClickEvent, ctx: any) {
     if (ctx.column && e.itemData.icon === "resize") {
       console.log('click through')
-      console.log(gridRef.current.instance)
+      // console.log(gridRef.current.instance!)
       console.log(ctx.column.dataField)
       gridRef.current.instance.columnOption(ctx.column.dataField, 'width', 'auto')
     }
   }
 
   // same as comment above
-  function bestFitAllColumns(e, ctx) {
+  function bestFitAllColumns(e: DxContextMenuItemClickEvent, ctx: any) {
     // if(ctx.column && e.itemData.ixon === "fit-all")
   }
 
 
 
 
-  const startingToEdit = (e: React.SetStateAction<dxEvent | undefined>) => {
+  const startingToEdit = (e: DxDataGridEditingStartEvent) => {
     // cell is in focus
     console.log('in here')
     // we can get the values for that row before updating anything
@@ -186,18 +196,18 @@ const App = () => {
     // setEvent(event);
   }
 
-  function onInitialized(e) {
+  function onInitialized(e: any) {
     e.component.option('onColumnsChanging', onColumnsChanging)
 
   }
 
-  function cellClicked(e:) {
+  function cellClicked(e: any) {
     console.log(e)
   }
 
   const onColumnsChanging = _.debounce((args) => {
     console.log("columns changing")
-    console.log(gridRef.current.instance)
+    // console.log(gridRef.current.instance)
     // if (initialColumns === null) {
     // setInitialColumns(args.component._controllers.stateStoring._state.columns)
     // console.log(args.component._controllers.stateStoring._state.columns)
@@ -218,14 +228,16 @@ const App = () => {
       .then(
         (result) => {
           // setColumnNames(Object.keys(result[0]))
-          setData(result)
+          setGridData(result)
         }, (error) => {
+          console.log(error)
           setError(error)
         })
     fetch(process.env.API_URL + `users/no-role/settings`)
       .then(res => res.json())
       .then(
         (result) => {
+          console.log(result)
           setSettings(result)
           setGridFilterValue(JSON.parse(result[0].filters))
           // console.log(result[0].columns)
@@ -237,68 +249,77 @@ const App = () => {
 
 
   return (
+
     <div>
       <Async promiseFn={fetchColumns}>
-        <Async.Loading>Loading..</Async.Loading>
-        <Async.Fulfilled>
-          {columns => (
+        {({ data, error, isLoading }) => {
+          if (isLoading) return "Loading..."
+          if (error) return `Something went wrong: ${error.message}`
+          if (data) return (
             <div>
-              <Button
-                text={pendingChanges ? "Pending Changes" : "Synchronised"}
-                disabled={!pendingChanges}
-                type="default"
-                onClick={saveChanges} />
-              <div className="filter-container">
-                <FilterBuilder
-                  fields={columns[0].columns}
-                  value={gridFilterValue}
-                  onValueChanged={onFilterValueChanged} />
-                {/* <Button
+              {
+                data.map((col) => {
+                  <div>
+                    {console.log(col.columns)}
+
+                    <Button
+                      text={pendingChanges ? "Pending Changes" : "Synchronised"}
+                      disabled={!pendingChanges}
+                      type="default"
+                      onClick={saveChanges} />
+                    <div className="filter-container">
+
+                      <FilterBuilder
+                        fields={col.columns as Array<dxFilterBuilderField>}
+                        value={gridFilterValue || []}
+                        onValueChanged={onFilterValueChanged} />
+
+                      {/* <Button
                   text="Apply Filter"
                   type="default"
                   onClick={applyFilter} /> */}
-              </div>
+                    </div>
 
-              <div className="dx-clearfix"></div>
-              <div>
-                <DataGrid
-                  {...gridParams}
-                  dataSource={data}
-                  customizeColumns={e => customizeColumns(e, settings)}
-                  onEditingStart={(e) => startingToEdit(e)}
-                  onRowUpdated={(e) => rowUpdated(e)}
-                  onInitialized={onInitialized}
-                  onCellClick={cellClicked}
-                  onContextMenuPreparing={prepareContextMenu}
-                  ref={gridRef}
-                  filterValue={gridFilterValue}
-                  columns={columns[0].columns}
-                  onValueChanged={onValueChanged}
-                >
-                  <Grouping contextMenuEnabled={true} />
-                  <GroupPanel visible={groupPanelVisible} /> {/* or "auto" */}
-                  <ColumnChooser enabled={true} />
-                  <Editing
-                    mode="cell"
-                    allowUpdating={true} />
-                </DataGrid>
-              </div>
+                    <div className="dx-clearfix"></div>
+                    <div>
+                      <DataGrid
+                        {...gridParams}
+                        dataSource={gridData}
+                        customizeColumns={e => customizeColumns(e, settings)}
+                        onEditingStart={e => startingToEdit(e as DxDataGridEditingStartEvent)}
+                        onRowUpdated={(e) => rowUpdated(e)}
+                        onInitialized={onInitialized}
+                        onCellClick={cellClicked}
+                        onContextMenuPreparing={prepareContextMenu}
+                        ref={gridRef}
+                        filterValue={gridFilterValue || []}
+                        columns={col.columns as Array<dxDataGridColumn>}
+                      // onValueChanged={onValueChanged}
+                      >
+                        <Grouping contextMenuEnabled={true} />
+                        <GroupPanel visible={groupPanelVisible} /> {/* or "auto" */}
+                        <ColumnChooser enabled={true} />
+                        <Editing
+                          mode="cell"
+                          allowUpdating={true} />
+                      </DataGrid>
+                    </div>
+
+                  </div>
+                })
+              }
             </div>
 
-          )}
 
-        </Async.Fulfilled>
+          )
+        }
+        }
+
+
       </Async>
-
-
     </div>
 
   )
 }
 
-ReactDOM.render(
-  <StoreProvider store={store}>
-    <App />
-  </StoreProvider>
-  ,
-  document.getElementById("app"));
+export default App
