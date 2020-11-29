@@ -10,7 +10,7 @@ import DataGrid, { Column, ColumnChooser, Editing, GroupPanel, Grouping } from '
 import Button from 'devextreme-react/button';
 
 import store from './utils/store'
-import { fetchColumns } from './utils/api'
+import { fetchColumns, updateRow } from './utils/api'
 import { rowUpdated, customizeColumns } from './utils/gridActions'
 import './styles/base.css'
 
@@ -219,6 +219,7 @@ const App = () => {
       .then(res => res.json())
       .then(
         (result) => {
+          console.log(result)
           setSettings(result)
           setGridFilterValue(JSON.parse(result[0].filters))
           // console.log(result[0].columns)
@@ -234,8 +235,12 @@ const App = () => {
 
 
 
-  const onEditingStart = (e) => {
-    console.log(e)
+  const changesRegistered = (e) => {
+    const rowObj = e.changes[0].data;
+    console.log(rowObj)
+    updateRow(rowObj)
+
+  
   }
 
 
@@ -266,8 +271,6 @@ const App = () => {
               <div className="dx-clearfix"></div>
               <div>
                 <DataGrid
-                  onEditingStart={onEditingStart}
-                  // onEditorPreparing={onEditorPreparing}
                   {...gridParams}
                   dataSource={data}
                   customizeColumns={customizeColumnsWithSettings}
@@ -280,6 +283,7 @@ const App = () => {
                   ref={gridRef}
                   filterValue={gridFilterValue}
                   columns={columns[0].columns}
+                  onSaved={changesRegistered}
                 >
                   <Grouping contextMenuEnabled={true} />
                   <GroupPanel visible={groupPanelVisible} /> {/* or "auto" */}
@@ -287,8 +291,6 @@ const App = () => {
                   <Editing
                     mode="cell"
                     allowUpdating={true} 
-                  
-                    
                     />
                 </DataGrid>
               </div>
