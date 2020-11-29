@@ -23,6 +23,11 @@ const App = () => {
     columnHidingEnabled: true
   }
 
+  const [cellVal, setCellVal] = useState(null)
+  const [keyDownEvent, setKeyDownEvent] = useState(null)
+  const [columnIndex, setColumnIndex] = useState(null)
+  const [rowIndex, setRowIndex] = useState(null)
+
   const gridRef = useRef(null)
   const [error, setError] = useState(null);
   const [event, setEvent] = useState(null)
@@ -45,8 +50,8 @@ const App = () => {
 
   // 1st state update: cell focused
   useEffect(() => {
-    console.log('yes')
-    console.log(event)
+    // console.log('yes')
+    // console.log(event)
     if (event) {
       setIntendedCellToEdit(event.column.dataField)
     }
@@ -55,17 +60,12 @@ const App = () => {
   // 2nd state update: capture the value of that cell
   useEffect(() => {
     if (intendedCellToEdit) {
-      console.log((event.data))
-      console.log("intendedCell captured of column: " + intendedCellToEdit + " and content " + event.data[intendedCellToEdit])
-      console.log(event.data[intendedCellToEdit])
-      setInitVal(event.data[intendedCellToEdit])
+      // console.log((event.data))
+      // console.log("intendedCell captured of column: " + intendedCellToEdit + " and content " + event.data[intendedCellToEdit])
+      // console.log(event.data[intendedCellToEdit])
     }
   }, [intendedCellToEdit])
 
-
-  // const applyFilter = (e) => {
-  //   setGridFilterValue(e)
-  // }
 
   const saveChanges = () => {
 
@@ -152,32 +152,48 @@ const App = () => {
   }
 
 
-
-
   const startingToEdit = (e) => {
     // cell is in focus
-    console.log('in here')
     // we can get the values for that row before updating anything
     const { _id, uid, name, role, email, modules, details } = e.data
     /*  devextreme events are synchronous but our state is updating asynchronously. Let everything that needs to happen, 
         happen in the useEffect hooks, with the corresponding dependency array
     */
-    console.log(e)
-    setEvent(e);
+    // setEvent(e);
   }
 
   function onInitialized(e) {
     e.component.option('onColumnsChanging', onColumnsChanging)
-
   }
 
   function cellClicked(e) {
-    console.log(e)
+    // we can set the value of the cell that is about be edited
+    setCellVal(gridRef.current.instance.cellValue(e.rowIndex, e.columnIndex))
+    setColumnIndex(e.columnIndex)
+    setRowIndex(e.rowIndex)
+    
   }
 
+  function onKeyDown(e) {
+    setKeyDownEvent(e)
+    if (e.event.target.className === "dx-texteditor-input") {
+
+      // console.log("some input is being updated..")
+      setPendingChanges(true)
+    }
+
+  }
+
+  useEffect(() => {
+    if(keyDownEvent){
+        console.log(gridRef.current.instance.cellValue(rowIndex, columnIndex))
+    }
+
+  }, [keyDownEvent])
+
   const onColumnsChanging = _.debounce((args) => {
-    console.log("columns changing")
-    console.log(gridRef.current.instance)
+    // console.log("columns changing")
+    // console.log(gridRef.current.instance)
     // if (initialColumns === null) {
     // setInitialColumns(args.component._controllers.stateStoring._state.columns)
     // console.log(args.component._controllers.stateStoring._state.columns)
@@ -212,6 +228,16 @@ const App = () => {
         })
   }, [])
 
+  const customizeColumnsWithSettings = useCallback((e) => {
+    return customizeColumns(e, settings)
+  }, [settings]);
+
+
+
+  const onEditingStart = (e) => {
+    console.log(e)
+  }
+
 
   return (
     <div>
@@ -220,8 +246,6 @@ const App = () => {
         <Async.Fulfilled>
           {columns => (
             <div>
-              {console.log("cols")}
-              {console.log(columns)}
 
               <Button
                 text={pendingChanges ? "Pending Changes" : "Synchronised"}
@@ -242,13 +266,16 @@ const App = () => {
               <div className="dx-clearfix"></div>
               <div>
                 <DataGrid
+                  onEditingStart={onEditingStart}
+                  // onEditorPreparing={onEditorPreparing}
                   {...gridParams}
                   dataSource={data}
-                  customizeColumns={e => customizeColumns(e, settings)}
-                  onEditingStart={(e) => startingToEdit(e)}
-                  onRowUpdated={(e) => rowUpdated(e)}
+                  customizeColumns={customizeColumnsWithSettings}
+                  onEditingStart={startingToEdit}
+                  onRowUpdated={rowUpdated}
                   onInitialized={onInitialized}
                   onCellClick={cellClicked}
+                  onKeyDown={onKeyDown}
                   onContextMenuPreparing={prepareContextMenu}
                   ref={gridRef}
                   filterValue={gridFilterValue}
@@ -259,7 +286,10 @@ const App = () => {
                   <ColumnChooser enabled={true} />
                   <Editing
                     mode="cell"
-                    allowUpdating={true} />
+                    allowUpdating={true} 
+                  
+                    
+                    />
                 </DataGrid>
               </div>
             </div>

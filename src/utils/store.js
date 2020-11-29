@@ -7,7 +7,6 @@ import { createStore, action, thunk } from 'easy-peasy';
 const dataModel = {
   data: null,
   setData: action((state, payload) => {
-    console.log(payload)
     state.data = payload;
   })
 }
