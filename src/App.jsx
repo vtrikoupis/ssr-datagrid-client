@@ -10,7 +10,7 @@ import DataGrid, { Column, ColumnChooser, Editing, GroupPanel, Grouping } from '
 import Button from 'devextreme-react/button';
 
 import store from './utils/store'
-import { fetchColumns, updateRow } from './utils/api'
+import { fetchColumns, updateRow, updateFilters } from './utils/api'
 import { rowUpdated, customizeColumns } from './utils/gridActions'
 import './styles/base.css'
 
@@ -27,6 +27,8 @@ const App = () => {
   const [keyDownEvent, setKeyDownEvent] = useState(null)
   const [columnIndex, setColumnIndex] = useState(null)
   const [rowIndex, setRowIndex] = useState(null)
+  const [settingsId, setSettingsId] = useState(null)
+  const [columns, setColumns] = useState(null)
 
   const gridRef = useRef(null)
   const [error, setError] = useState(null);
@@ -50,8 +52,6 @@ const App = () => {
 
   // 1st state update: cell focused
   useEffect(() => {
-    // console.log('yes')
-    // console.log(event)
     if (event) {
       setIntendedCellToEdit(event.column.dataField)
     }
@@ -66,16 +66,22 @@ const App = () => {
     }
   }, [intendedCellToEdit])
 
+  useEffect(()=> {
+    // console.log(columns)
+    if(gridRef.current?.instance){
+      updateColumns(gridRef.current?.props.columns)
 
-  const saveChanges = () => {
-
-  }
+    }
+    
+  }, [lastColumnHidden, groupPanelVisible])
 
   const onFilterValueChanged = (e) => {
+    console.log(e)
     console.log(e.value)
+    console.log(settingsId)
     setGridFilterValue(e.value)
+    updateFilters(e.value, settingsId)
   }
-
 
   const prepareContextMenu = (ctx) => {
     if (ctx.target == "header") {
@@ -171,7 +177,7 @@ const App = () => {
     setCellVal(gridRef.current.instance.cellValue(e.rowIndex, e.columnIndex))
     setColumnIndex(e.columnIndex)
     setRowIndex(e.rowIndex)
-    
+
   }
 
   function onKeyDown(e) {
@@ -185,8 +191,8 @@ const App = () => {
   }
 
   useEffect(() => {
-    if(keyDownEvent){
-        console.log(gridRef.current.instance.cellValue(rowIndex, columnIndex))
+    if (keyDownEvent) {
+      console.log(gridRef.current.instance.cellValue(rowIndex, columnIndex))
     }
 
   }, [keyDownEvent])
@@ -219,9 +225,12 @@ const App = () => {
       .then(res => res.json())
       .then(
         (result) => {
+          const { _id, filters, columns } = result[0]
           console.log(result)
           setSettings(result)
-          setGridFilterValue(JSON.parse(result[0].filters))
+          setGridFilterValue(JSON.parse(filters))
+          setSettingsId(_id)
+          setColumns(columns)
           // console.log(result[0].columns)
           // setColumns(result[0].columns)
         }, (error) => {
@@ -237,11 +246,26 @@ const App = () => {
 
   const changesRegistered = (e) => {
     const rowObj = e.changes[0].data;
-    console.log(rowObj)
     updateRow(rowObj)
-
-  
+    // Perhaps there's more changes to be saved.
+    setPendingChanges(false)
   }
+
+  const saveChanges = () => {
+
+  }
+
+  useEffect(() => {
+    if (pendingChanges) {
+      window.addEventListener("beforeunload", (ev) => {
+        ev.preventDefault();
+        return ev.returnValue = 'You have unsaved changes! Are you sure you want to exit?';
+      });
+    }
+
+  }, [pendingChanges])
+
+
 
 
   return (
@@ -290,8 +314,8 @@ const App = () => {
                   <ColumnChooser enabled={true} />
                   <Editing
                     mode="cell"
-                    allowUpdating={true} 
-                    />
+                    allowUpdating={true}
+                  />
                 </DataGrid>
               </div>
             </div>
@@ -300,8 +324,6 @@ const App = () => {
 
         </Async.Fulfilled>
       </Async>
-
-
     </div>
 
   )

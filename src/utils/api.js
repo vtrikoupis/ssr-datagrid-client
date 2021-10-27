@@ -18,3 +18,20 @@ export const updateRow = async (row) => {
   return res.json();
 
 }
+
+export const updateFilters = async (filters, _id) => {
+  console.log('updating filters')
+  filters = JSON.stringify(filters)
+  console.log(_id)
+  // const {_id} = row;
+  // console.log(_id)
+  const res = await fetch(process.env.API_URL + `users/no-role/settings`, {
+    method: "PUT",
+    mode: "cors",
+    body: JSON.stringify({_id,filters}),
+    headers: new Headers({ "Content-Type": "application/json" }),
+  })
+  if (!res.ok) throw new Error(res.statusText)
+  return res.json();
+
+}
