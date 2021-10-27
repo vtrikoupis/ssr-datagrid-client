@@ -66,14 +66,14 @@ const App = () => {
     }
   }, [intendedCellToEdit])
 
-  useEffect(()=> {
-    // console.log(columns)
-    if(gridRef.current?.instance){
-      updateColumns(gridRef.current?.props.columns)
+  // useEffect(()=> {
+  //   // console.log(columns)
+  //   if(gridRef.current?.instance){
+  //     updateColumns(gridRef.current?.props.columns)
 
-    }
+  //   }
     
-  }, [lastColumnHidden, groupPanelVisible])
+  // }, [lastColumnHidden, groupPanelVisible])
 
   const onFilterValueChanged = (e) => {
     console.log(e)
