@@ -39,5 +39,8 @@
     "react-dom": "^16.13.0",
     "styled-components": "^5.2.0",
     "styled-react-modal": "^2.0.1"
+  },
+  "engines": {
+    "node": "24.x"
   }
 }
